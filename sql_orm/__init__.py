@@ -7,6 +7,9 @@ class SQLException(Exception):
     pass
 
 
+NON_COLUMN_FIELDS = ("__module__", "__doc__", "Meta", "_schema")
+
+
 class Table:
 
     database_type = None
@@ -22,23 +25,18 @@ class Table:
     def _get_column_fields(cls):
         fields = {}
         for k, v in cls.__dict__.items():
-            if k not in ["__module__", "__doc__"]:
+            if k not in NON_COLUMN_FIELDS:
                 fields[k] = v
         return fields
 
     @classmethod
+    def _get_meta_field(cls):
+        return cls.__dict__.get("Meta")
+
+    @classmethod
     def get_column_names(cls):
-        return [v.name for k, v in cls.__dict__.items() if
-                k not in ("__module__", "__doc__")]
+        return [k for k in cls.__dict__.keys() if k not in NON_COLUMN_FIELDS]
 
     @classmethod
     def get_table_name(cls):
         return cls.__name__.lower()
-
-    @classmethod
-    def create_table(cls):
-        pass
-
-    @classmethod
-    def create_columns(cls):
-        pass

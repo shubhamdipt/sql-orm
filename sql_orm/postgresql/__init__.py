@@ -15,10 +15,12 @@ class PostgreSQL:
             "user": CONFIG["POSTGRESQL"]["DB_USER"],
             "password": CONFIG["POSTGRESQL"]["DB_PASSWORD"]
         }
+        self.debug = CONFIG["POSTGRESQL"].get("DEBUG") == "True"
         try:
             self._conn = psycopg2.connect(**credentials)
             self._cursor = self._conn.cursor()
-            print("Connected to PostgreSQL\n")
+            if self.debug:
+                print("Connected to PostgreSQL\n")
         except psycopg2.Error as error:
             raise ValueError("Unable to connect to PostgreSQL database\n{error}".format(error=error))
 
@@ -30,7 +32,8 @@ class PostgreSQL:
 
     def __del__(self):
         self.connection.close()
-        print("\nClosed PostgreSQL connection.")
+        if self.debug:
+            print("\nClosed PostgreSQL connection.")
 
     @property
     def connection(self):
@@ -44,6 +47,8 @@ class PostgreSQL:
         self.connection.commit()
 
     def query(self, sql, params=None):
+        if self.debug:
+            print(self.mogrify(sql, params))
         self.cursor.execute(sql, params or ())
 
     def mogrify(self, sql, params=None):
@@ -56,15 +61,21 @@ class PostgreSQL:
         return self.cursor.fetchone()
 
     def insert(self, sql, params=None):
+        if self.debug:
+            print(self.mogrify(sql, params))
         self.cursor.execute(sql, params or ())
         self.commit()
 
     def insert_many(self, sql, params=None):
         params_str = ','.join((self.mogrify("%s", (x, ))).decode('utf-8') for x in params)
+        if self.debug:
+            print(self.mogrify(sql.format(params_str)))
         self.cursor.execute(sql.format(params_str))
         self.commit()
 
     def fetch_query_results(self, sql, params=None):
+        if self.debug:
+            print(self.mogrify(sql, params))
         self.cursor.execute(sql, params or ())
         while True:
             try:
