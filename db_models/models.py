@@ -16,6 +16,7 @@ class Transactions(PostgreSQLTable):
     date_of_entry = datatypes.DateField(verbose_name="Date of entry")
     amount = datatypes.FloatField(verbose_name="Amount")
     currency = datatypes.CharField(max_length=10)
+    status = datatypes.BooleanField(verbose_name="Status", default=False)
     bank = datatypes.ForeignKeyField(
         table_name=Bank,
         verbose_name="Bank",

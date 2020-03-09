@@ -8,15 +8,18 @@ class Field:
     field_type = None
     __value = None
 
-    def __init__(self, verbose_name=None, null=False, unique=False, primary_key=False, extra_sql=()):
+    def __init__(self, verbose_name=None, null=False, unique=False, primary_key=False, default=None, extra_sql=()):
         self.verbose_name = verbose_name
         self.primary_key = primary_key
         if primary_key:
             self.properties = "PRIMARY KEY"
         else:
-            self.properties = "NULL" if null else "NOT NULL"
-            if unique:
-                self.properties = "UNIQUE " + self.properties
+            if default is not None:
+                self.properties = "DEFAULT {}".format("TRUE" if default else "FALSE")
+            else:
+                self.properties = "NULL" if null else "NOT NULL"
+                if unique:
+                    self.properties = "UNIQUE " + self.properties
         if extra_sql:
             self.properties += " " + " ".join(extra_sql)
         self.base_create_query = sql.add_table_column()
@@ -40,6 +43,15 @@ class Field:
             properties=self.properties
         )
         return query
+
+
+class BooleanField(Field):
+
+    field_type = "BOOLEAN"
+
+    @staticmethod
+    def convert(value):
+        return bool(value)
 
 
 class IntegerField(Field):
