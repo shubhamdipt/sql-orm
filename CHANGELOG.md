@@ -10,3 +10,10 @@ All notable changes in this project are documented in this file.
 
 - BooleanField
 - DEFAULT Values
+
+
+### 1.0.3
+
+#### Added
+
+- Model instance methods

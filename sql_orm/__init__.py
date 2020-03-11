@@ -1,3 +1,6 @@
+import inspect
+
+
 DATABASE_TYPES = {
     "PostgreSQL": "postgresql",
 }
@@ -8,6 +11,10 @@ class SQLException(Exception):
 
 
 NON_COLUMN_FIELDS = ("__module__", "__doc__", "Meta", "_schema")
+
+
+class BaseField:
+    pass
 
 
 class Table:
@@ -23,11 +30,8 @@ class Table:
 
     @classmethod
     def _get_column_fields(cls):
-        fields = {}
-        for k, v in cls.__dict__.items():
-            if k not in NON_COLUMN_FIELDS:
-                fields[k] = v
-        return fields
+        valid_column_names = cls.get_column_names()
+        return {k: v for k, v in cls.__dict__.items() if k in valid_column_names}
 
     @classmethod
     def _get_meta_field(cls):
@@ -35,7 +39,12 @@ class Table:
 
     @classmethod
     def get_column_names(cls):
-        return [k for k in cls.__dict__.keys() if k not in NON_COLUMN_FIELDS]
+        names = []
+        for k, v in cls.__dict__.items():
+            class_inspects = inspect.getmro(v.__class__)
+            if len(class_inspects) > 1 and class_inspects[-2] == BaseField:
+                names.append(k)
+        return names
 
     @classmethod
     def get_table_name(cls):

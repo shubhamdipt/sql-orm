@@ -1,8 +1,8 @@
-from sql_orm import DATABASE_TYPES
+from sql_orm import DATABASE_TYPES, BaseField
 from sql_orm.postgresql import sql
 
 
-class Field:
+class Field(BaseField):
 
     database_type = DATABASE_TYPES["PostgreSQL"]
     field_type = None

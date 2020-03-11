@@ -22,3 +22,6 @@ class Transactions(PostgreSQLTable):
         verbose_name="Bank",
         null=True
     )
+
+    def transaction_method(self):
+        return "Ok"
