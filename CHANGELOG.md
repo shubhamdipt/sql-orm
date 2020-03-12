@@ -17,3 +17,10 @@ All notable changes in this project are documented in this file.
 #### Added
 
 - Model instance methods
+
+
+### 1.0.4
+
+#### Added
+
+- Bug fixes

@@ -44,7 +44,7 @@ class Table:
             class_inspects = inspect.getmro(v.__class__)
             if len(class_inspects) > 1 and class_inspects[-2] == BaseField:
                 names.append(k)
-        return names
+        return sorted(names)
 
     @classmethod
     def get_table_name(cls):

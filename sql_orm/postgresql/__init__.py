@@ -20,7 +20,7 @@ class PostgreSQL:
             self._conn = psycopg2.connect(**credentials)
             self._cursor = self._conn.cursor()
             if self.debug:
-                print("Connected to PostgreSQL\n")
+                print("\nConnected to PostgreSQL\n")
         except psycopg2.Error as error:
             raise ValueError("Unable to connect to PostgreSQL database\n{error}".format(error=error))
 
@@ -28,12 +28,15 @@ class PostgreSQL:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.connection.close()
+        self.close()
 
     def __del__(self):
+        self.close()
+
+    def close(self):
         self.connection.close()
         if self.debug:
-            print("\nClosed PostgreSQL connection.")
+            print("\nClosed PostgreSQL connection.\n")
 
     @property
     def connection(self):

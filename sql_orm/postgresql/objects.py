@@ -18,6 +18,7 @@ class MultipleObjectsFound(Exception):
 class RowSet:
 
     def __init__(self, table_class):
+        self.pgsql = postgresql.PostgreSQL()
         self.__table_class = table_class
         self.__table_columns = table_class.get_column_names()
         self.__filter_exclude_inputs = {
@@ -29,17 +30,25 @@ class RowSet:
         self.__offset = None
         self.__delete = False
 
-    @staticmethod
-    def __sql_read(query, params=()):
-        with postgresql.PostgreSQL() as pgsql:
-            for i in pgsql.fetch_query_results(query, params=params):
-                yield i
+    def __enter__(self):
+        return self
 
-    @staticmethod
-    def __sql_delete(query, params=()):
-        with postgresql.PostgreSQL() as pgsql:
-            pgsql.query(query, params=params)
-            pgsql.commit()
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        self.pgsql.close()
+
+    def __sql_read(self, query, params=()):
+        for i in self.pgsql.fetch_query_results(query, params=params):
+            yield i
+
+    def __sql_delete(self, query, params=()):
+        self.pgsql.query(query, params=params)
+        self.pgsql.commit()
 
     def __update_query_inputs(self, data):
         if data:
@@ -87,9 +96,8 @@ class RowSet:
 
     def __iter__(self):
         for i in self.__sql_read(**self.__create_query()):
-            obj = self.__table_class()
-            for col in range(len(self.__table_columns)):
-                setattr(obj, self.__table_columns[col], i[col])
+            properties = {self.__table_columns[col]: i[col] for col in range(len(self.__table_columns))}
+            obj = self.__table_class(**properties)
             yield obj
 
     def __next__(self):

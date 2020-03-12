@@ -25,7 +25,7 @@ from setuptools import setup, find_packages
 links = []  # for repo urls (dependency_links)
 
 DESCRIPTION = "A python based ORM (Object relational mapping) to make flexible queries and saving new items in the database."
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 
 with open("README.md", "r") as fh:
