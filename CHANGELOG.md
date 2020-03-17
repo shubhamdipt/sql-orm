@@ -21,6 +21,13 @@ All notable changes in this project are documented in this file.
 
 ### 1.0.4
 
-#### Added
+#### Fixes
 
 - Bug fixes
+
+
+### 1.0.5
+
+#### Added
+
+- OR filter in queries

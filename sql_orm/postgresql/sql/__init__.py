@@ -34,7 +34,7 @@ LOGICAL_SEPARATOR = "__"
 
 class Query:
 
-    def __init__(self, schema, table_class, table_columns, pk, order_dict=None, filter_dict=None, exclude_dict=None, limit=None, offset=None, delete=False):
+    def __init__(self, schema, table_class, table_columns, pk, order_dict=None, filter_dict=None, or_filter_dict=None, exclude_dict=None, limit=None, offset=None, delete=False):
         self.__schema = schema
         self.__table_class = table_class
         self.__table_name = table_class.get_table_name()
@@ -42,6 +42,7 @@ class Query:
         self.__pk = pk
         self.__order_dict = order_dict if order_dict else {"id": "ASC"}
         self.__filter_dict = filter_dict
+        self.__or_filter_dict = or_filter_dict
         self.__exclude_dict = exclude_dict
         self.__limit = limit
         self.__offset = offset
@@ -187,6 +188,10 @@ class Query:
 
     def __create_where_query(self):
         filter_query = ""
+        if self.__or_filter_dict:
+            filter_query = "( {} )".format(" OR ".join([
+                self.__change_to_sql_conditions(k, v)
+                for k, v in self.__or_filter_dict.items()]))
         if self.__filter_dict:
             filter_query += " AND ".join([
                 self.__change_to_sql_conditions(k, v)

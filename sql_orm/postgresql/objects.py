@@ -23,6 +23,7 @@ class RowSet:
         self.__table_columns = table_class.get_column_names()
         self.__filter_exclude_inputs = {
             "filter": {},
+            "or_filter": {},
             "exclude": {},
             "order_by": {}
         }
@@ -63,6 +64,7 @@ class RowSet:
             pk=self.__table_class.get_pk_name(),
             order_dict=self.__filter_exclude_inputs["order_by"],
             filter_dict=self.__filter_exclude_inputs["filter"],
+            or_filter_dict=self.__filter_exclude_inputs["or_filter"],
             exclude_dict=self.__filter_exclude_inputs["exclude"],
             limit=self.__limit,
             offset=self.__offset,
@@ -133,6 +135,10 @@ class RowSet:
 
     def filter(self, **kwargs):
         self.__update_query_inputs({"filter": kwargs})
+        return self
+
+    def or_filter(self, **kwargs):
+        self.__update_query_inputs({"or_filter": kwargs})
         return self
 
     def exclude(self, **kwargs):
