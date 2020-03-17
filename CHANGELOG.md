@@ -31,3 +31,10 @@ All notable changes in this project are documented in this file.
 #### Added
 
 - OR filter in queries
+
+
+### 1.0.6
+
+#### Fixes
+
+- Bug fixes

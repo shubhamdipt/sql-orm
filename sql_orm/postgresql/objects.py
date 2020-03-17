@@ -146,8 +146,7 @@ class RowSet:
         return self
 
     def get(self, **kwargs):
-        self.__filter_exclude_inputs = {"filter": kwargs, "exclude": {},
-                                        "order_by": {}}
+        self.__filter_exclude_inputs["filter"] = kwargs
         objects_found = [i for i in self.__iter__()]
         if not objects_found:
             raise ObjectDoesNotExist("Object does not exist.")
