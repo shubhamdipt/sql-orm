@@ -34,7 +34,21 @@ LOGICAL_SEPARATOR = "__"
 
 class Query:
 
-    def __init__(self, schema, table_class, table_columns, pk, order_dict=None, filter_dict=None, or_filter_dict=None, exclude_dict=None, limit=None, offset=None, delete=False):
+    def __init__(
+            self,
+            schema,
+            table_class,
+            table_columns,
+            pk,
+            order_dict=None,
+            filter_dict=None,
+            or_filter_dict=None,
+            exclude_dict=None,
+            select_related=None,
+            limit=None,
+            offset=None,
+            delete=False
+    ):
         self.__schema = schema
         self.__table_class = table_class
         self.__table_name = table_class.get_table_name()
@@ -44,6 +58,7 @@ class Query:
         self.__filter_dict = filter_dict
         self.__or_filter_dict = or_filter_dict
         self.__exclude_dict = exclude_dict
+        self.__select_related = select_related
         self.__limit = limit
         self.__offset = offset
         self.__delete = delete
@@ -68,7 +83,8 @@ class Query:
         self.__where_query = ""
         self.__order_by_query = ""
         self.__limit_offset_query = ""
-        self.__tables_involved = OrderedDict()
+        self.__column_query = ""
+        self.__other_tables_involved = {}
 
     def __logical_conditions(self, schema, table_name, key, value, condition):
         if key == "pk":
@@ -107,42 +123,28 @@ class Query:
             operation=self.__operators[condition],
         )
 
-    def __set_tables_involved(self, table_class, key=None):
-        table = "{}.{}".format(table_class.get_schema(), table_class.get_table_name())
-        if table in self.__tables_involved:
-            if key and not self.__tables_involved[table]["key"]:
-                self.__tables_involved[table].update({"key": key})
-        else:
-            self.__tables_involved[table] = {
-                "schema": table_class.get_schema(),
-                "table": table_class.get_table_name(),
-                "columns": table_class.get_column_names(),
-                "pk": table_class.get_pk_name(),
-                "key": key,
-            }
-
     def __switch_to_join_query(self):
-        tables = list(self.__tables_involved.items())
+        base_table = "{}.{}".format(self.__schema, self.__table_name)
         if self.__delete:
-            from_query = "FROM {} USING ".format(tables[0][0])
-            self.__from_query = from_query + ", ".join([i[0] for i in tables[1:]])
+            from_query = "FROM {} USING ".format(base_table)
+            self.__from_query = from_query + ", ".join([i for i in self.__other_tables_involved.keys()])
         else:
-            column_query = ", ".join(",".join(["{}.{}.{}".format(i["schema"], i["table"], j) for j in i["columns"]]) for _, i in tables)
-            join_query = "{} FROM {}.{}".format(column_query, tables[0][1]["schema"], tables[0][1]["table"])
-            for i in range(1, len(tables)):
+            self.__column_query = ", ".join(["{}.{}".format(base_table, i) for i in self.__table_columns]) + ", "
+            self.__column_query += ", ".join(",".join(["{}.{}".format(k, j) for j in v["columns"]]) for k, v in self.__other_tables_involved.items())
+            join_query = "{} FROM {}".format(self.__column_query, base_table)
+            for k, v in self.__other_tables_involved.items():
                 join_query += (
                     " LEFT JOIN " +
-                    "{}.{}".format(tables[i][1]["schema"], tables[i][1]["table"]) +
+                    "{}".format(k) +
                     " ON " +
-                    "{}={}".format("{}.{}.{}".format(tables[i-1][1]["schema"], tables[i-1][1]["table"], tables[i-1][1]["key"]),
-                                   "{}.{}.{}".format(tables[i][1]["schema"], tables[i][1]["table"], tables[i][1]["pk"]))
+                    "{}={}".format("{}.{}".format(k, v["pk"]),
+                                   "{}.{}".format(v["join_key"]["table"], v["join_key"]["field_name"]))
                 )
             self.__from_query = join_query
 
     def __change_to_sql_conditions(self, key, value):
         key_splits = key.split(LOGICAL_SEPARATOR)
         if len(key_splits) == 1:
-            self.__set_tables_involved(table_class=self.__table_class)
             return self.__logical_conditions(
                 schema=self.__schema,
                 table_name=self.__table_name,
@@ -156,7 +158,6 @@ class Query:
                 key = key_splits[-2]
                 fk_fields = key_splits[:-2]
                 if not fk_fields:
-                    self.__set_tables_involved(table_class=self.__table_class)
                     return self.__logical_conditions(
                         schema=self.__schema,
                         table_name=self.__table_name,
@@ -169,18 +170,22 @@ class Query:
                 condition = "="
                 fk_fields = key_splits[:-1]
 
-            fk_table_class = self.__table_class
-            self.__set_tables_involved(table_class=self.__table_class, key=fk_fields[0])
-            for i in range(len(fk_fields)):
-                fk = fk_fields[i]
-                if not hasattr(fk_table_class.__dict__[fk], "table_name"):
-                    raise InvalidQueryException("Not a ForeignKey: {}".format(fk))
-                fk_table_class = getattr(fk_table_class.__dict__[fk], "table_name")
-                self.__set_tables_involved(table_class=fk_table_class, key=None if i == len(fk_fields) -1 else fk_fields[i+1])
+            table_class = self.__table_class
+            for fk in fk_fields:
+                fk_table_class = getattr(table_class.__dict__[fk], "table_name")
+                self.__other_tables_involved["{}.{}".format(fk_table_class.get_schema(), fk_table_class.get_table_name())] = {
+                    "columns": fk_table_class.get_column_names(),
+                    "pk": fk_table_class.get_pk_name(),
+                    "join_key": {
+                        "table": "{}.{}".format(table_class.get_schema(), table_class.get_table_name()),
+                        "field_name": fk
+                    },
+                }
+                table_class = fk_table_class
 
             return self.__logical_conditions(
-                schema=fk_table_class.get_schema(),
-                table_name=fk_table_class.get_table_name(),
+                schema=table_class.get_schema(),
+                table_name=table_class.get_table_name(),
                 key=key,
                 value=value,
                 condition=condition
@@ -208,16 +213,29 @@ class Query:
         self.__where_query = filter_query
 
     def __create_from_query(self):
-        if len(self.__tables_involved.keys()) <= 1:
+        if len(self.__other_tables_involved.keys()) == 0:
             if self.__delete:
                 self.__from_query = "FROM {}.{}".format(self.__schema, self.__table_name)
             else:
+                self.__column_query = ", ".join(["{}.{}.{}".format(self.__schema, self.__table_name, i) for i in self.__table_columns])
                 self.__from_query = "{} FROM {}".format(
-                    ", ".join(["{}.{}.{}".format(self.__schema, self.__table_name, i) for i in self.__table_columns]),
+                    self.__column_query,
                     "{}.{}".format(self.__schema, self.__table_name)
                 )
         else:
             self.__switch_to_join_query()
+
+    def __process_select_related(self):
+        for fk in self.__select_related:
+            table_class = getattr(self.__table_class.__dict__[fk], "table_name")
+            self.__other_tables_involved["{}.{}".format(table_class.get_schema(), table_class.get_table_name())] = {
+                "columns": table_class.get_column_names(),
+                "pk": table_class.get_pk_name(),
+                "join_key": {
+                    "table": "{}.{}".format(self.__table_class.get_schema(), self.__table_class.get_table_name()),
+                    "field_name": fk
+                },
+            }
 
     def __create_order_by_query(self):
         order_query = ""
@@ -242,6 +260,7 @@ class Query:
         self.__create_limit_offset_query()
 
         self.__create_where_query()
+        self.__process_select_related()
         self.__create_from_query()
 
         query = (
@@ -250,4 +269,4 @@ class Query:
             self.__order_by_query +
             self.__limit_offset_query
         )
-        return self.__base_query.format(query), self.__params
+        return self.__base_query.format(query), self.__params, self.__column_query

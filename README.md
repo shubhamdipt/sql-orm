@@ -57,7 +57,6 @@ Sample models can be found in the GitHub repository.
 
 * JSONField for PostgreSQL.
 * ManyToMany relationship in models.
-* select_related, prefetch_related, Q look ups in queries.
 * Support for MySQL.
 * Support for makemigrations.
 

@@ -4,22 +4,15 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
-### 1.0.2
+
+### 1.0.7
 
 #### Added
 
-- BooleanField
-- DEFAULT Values
+- select_related (JOIN operation in queries)
 
 
-### 1.0.3
-
-#### Added
-
-- Model instance methods
-
-
-### 1.0.4
+### 1.0.6
 
 #### Fixes
 
@@ -33,8 +26,23 @@ All notable changes in this project are documented in this file.
 - OR filter in queries
 
 
-### 1.0.6
+### 1.0.4
 
 #### Fixes
 
 - Bug fixes
+
+
+### 1.0.3
+
+#### Added
+
+- Model instance methods
+
+
+### 1.0.2
+
+#### Added
+
+- BooleanField
+- DEFAULT Values

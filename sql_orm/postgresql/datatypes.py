@@ -121,6 +121,8 @@ class ForeignKeyField(Field):
 
     def __get__(self, instance, owner):
         if self.__value is not None:
+            if isinstance(self.__value, self.table_name):
+                return self.__value
             value = self.table_name.get_value_or_object_pk(self.__value)
             value = self.table_name.objects.get(pk=self.field.convert(value))
             return value

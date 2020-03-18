@@ -30,6 +30,8 @@ class RowSet:
         self.__limit = None
         self.__offset = None
         self.__delete = False
+        self.__select_related = []
+        self.__columns_order = []
 
     def __enter__(self):
         return self
@@ -66,12 +68,45 @@ class RowSet:
             filter_dict=self.__filter_exclude_inputs["filter"],
             or_filter_dict=self.__filter_exclude_inputs["or_filter"],
             exclude_dict=self.__filter_exclude_inputs["exclude"],
+            select_related=self.__select_related,
             limit=self.__limit,
             offset=self.__offset,
             delete=self.__delete
         )
-        sql_query, params = query.query()
+        sql_query, params, column_query = query.query()
+        self.__columns_order = [i.strip() for i in column_query.split(",")]
         return {"query": sql_query, "params": params}
+
+    def __set_attributes(self, column_values):
+        data_map = {self.__columns_order[i]: column_values[i] for i in
+                    range(len(self.__columns_order))}
+
+        def model_obj_set_attr(obj_table_class, model_obj, fk_field_name=None):
+            model_schema = obj_table_class.get_schema()
+            model_name = obj_table_class.get_table_name()
+            for obj_field in obj_table_class.get_column_names():
+                this_field = "{}.{}.{}".format(model_schema, model_name, obj_field)
+                if this_field not in data_map:
+                    return data_map[fk_field_name]
+                if isinstance(obj_table_class.__dict__[obj_field], datatypes.ForeignKeyField):
+                    obj_fk_table_class = getattr(obj_table_class.__dict__[obj_field], "table_name")
+                    mdoel_fk_obj = obj_fk_table_class()
+                    model_fk_obj = model_obj_set_attr(obj_fk_table_class, mdoel_fk_obj, fk_field_name=this_field)
+                    setattr(model_obj, obj_field, model_fk_obj)
+                else:
+                    setattr(model_obj, obj_field, data_map[this_field])
+            return model_obj
+
+        schema = self.__table_class.get_schema()
+        table_name = self.__table_class.get_table_name()
+        obj = self.__table_class()
+        if len(self.__table_columns) == len(self.__columns_order):
+            for k in self.__table_columns:
+                field = "{}.{}.{}".format(schema, table_name, k)
+                setattr(obj, k, data_map[field])
+        elif len(self.__table_columns) < len(self.__columns_order):
+            obj = model_obj_set_attr(self.__table_class, obj)
+        return obj
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -98,8 +133,7 @@ class RowSet:
 
     def __iter__(self):
         for i in self.__sql_read(**self.__create_query()):
-            properties = {self.__table_columns[col]: i[col] for col in range(len(self.__table_columns))}
-            obj = self.__table_class(**properties)
+            obj = self.__set_attributes(i)
             yield obj
 
     def __next__(self):
@@ -143,6 +177,13 @@ class RowSet:
 
     def exclude(self, **kwargs):
         self.__update_query_inputs({"exclude": kwargs})
+        return self
+
+    def select_related(self, field=None):
+        if field:
+            self.__select_related.append(field)
+        else:
+            self.__select_related = [k for k, v in self.__table_class.__dict__.items() if isinstance(v, datatypes.ForeignKeyField)]
         return self
 
     def get(self, **kwargs):
