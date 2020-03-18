@@ -4,6 +4,12 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
+### 1.0.8
+
+#### Added
+
+- Look up in lists in queries using __in
+
 
 ### 1.0.7
 

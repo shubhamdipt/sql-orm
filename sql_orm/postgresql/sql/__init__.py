@@ -76,6 +76,7 @@ class Query:
             "endswith": "LIKE",
             "iendswith": "ILIKE",
             "isnull": "IS",
+            "in": "=",
         }
         self.__params = []
         self.__base_query = "SELECT {};" if not delete else "DELETE {};"
@@ -93,6 +94,15 @@ class Query:
         if condition == "=":
             self.__params.append(value)
             return "{key}=%s".format(key=key)
+        if condition == "in":
+            if isinstance(value, list):
+                self.__params.append(value)
+                return "{key} {operation} ANY(%s)".format(
+                    key=key,
+                    operation=self.__operators[condition]
+                )
+            else:
+                raise InvalidQueryException("Value should be a list.")
         if condition == "isnull":
             base = "{key} {operation}".format(
                 key=key,
@@ -115,7 +125,6 @@ class Query:
             return "{key} {operation} %s".format(
                 key=key,
                 operation=self.__operators[condition],
-                value=value,
             )
         self.__params.append(value)
         return "{key}{operation}%s".format(
