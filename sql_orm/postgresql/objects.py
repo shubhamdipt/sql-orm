@@ -32,6 +32,7 @@ class RowSet:
         self.__delete = False
         self.__select_related = []
         self.__columns_order = []
+        self.__value = None
 
     def __enter__(self):
         return self
@@ -132,9 +133,13 @@ class RowSet:
         raise ValueError("Invalid index.")
 
     def __iter__(self):
-        for i in self.__sql_read(**self.__create_query()):
-            obj = self.__set_attributes(i)
-            yield obj
+        if self.__value is None:
+            for i in self.__sql_read(**self.__create_query()):
+                obj = self.__set_attributes(i)
+                yield obj
+        else:
+            for i in self.__value:
+                yield i
 
     def __next__(self):
         return next(self.__iter__())
@@ -217,6 +222,10 @@ class RowSet:
     def delete(self):
         self.__delete = True
         self.__sql_delete(**self.__create_query())
+
+    def count(self):
+        self.__value = [i for i in self]
+        return len(self.__value) if self.__value else 0
 
 
 class Objects:

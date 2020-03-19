@@ -4,6 +4,13 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
+### 1.0.9
+
+#### Added
+
+- count() gives the count of objects in query results
+
+
 ### 1.0.8
 
 #### Added
