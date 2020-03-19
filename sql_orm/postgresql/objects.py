@@ -129,7 +129,7 @@ class RowSet:
                 raise ValueError("Index cannot be negative.")
             self.__limit = 1
             self.__offset = index
-            return [i for i in self.__iter__()]
+            return [i for i in self.__iter__()][0]
         raise ValueError("Invalid index.")
 
     def __iter__(self):
