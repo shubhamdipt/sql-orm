@@ -3,6 +3,7 @@ import inspect
 
 DATABASE_TYPES = {
     "PostgreSQL": "postgresql",
+    "SQLite": "sqlite"
 }
 
 

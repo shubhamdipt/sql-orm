@@ -1,4 +1,4 @@
-from test_models.postgresql_models import *
+from db_models.models import *
 from migrate import run_migrations
 from datetime import datetime, timedelta
 

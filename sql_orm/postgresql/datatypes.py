@@ -15,7 +15,7 @@ class Field(BaseField):
             self.properties = "PRIMARY KEY"
         else:
             if default is not None:
-                self.properties = "DEFAULT {}".format("TRUE" if default else "FALSE")
+                self.properties = "DEFAULT {}".format(default)
             else:
                 self.properties = "NULL" if null else "NOT NULL"
                 if unique:
@@ -93,8 +93,8 @@ class CharField(Field):
 
     field_type = "VARCHAR"
 
-    def __init__(self, max_length, verbose_name=None, null=False, unique=False):
-        super().__init__(verbose_name=verbose_name, null=null, unique=unique)
+    def __init__(self, max_length, verbose_name=None, null=False, unique=False, default=None):
+        super().__init__(verbose_name=verbose_name, null=null, unique=unique, default=default)
         self.properties = "({}) {}".format(max_length, self.properties)
 
     @staticmethod
