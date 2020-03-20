@@ -4,10 +4,15 @@ import sys
 
 
 def get_classes_in_module(module):
-    return [i[1] for i in inspect.getmembers(models) if inspect.isclass(i[1]) and i[1].__module__ == module]
+    model_classes = []
+    for name, obj in inspect.getmembers(models):
+        if inspect.isclass(obj) and obj.__module__ == module:
+            source, start_line = inspect.getsourcelines(obj)
+            model_classes.append([name, obj, start_line])
+    return [i[1] for i in sorted(model_classes, key=lambda x: x[2])]
 
 
-def main():
+def run_migrations():
     dry_run = False
     if len(sys.argv) > 1:
         if sys.argv[1] == "dry":
@@ -19,4 +24,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run_migrations()
