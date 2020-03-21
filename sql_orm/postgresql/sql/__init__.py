@@ -14,7 +14,7 @@ def create_table():
 
 
 def add_table_column():
-    return "ALTER TABLE {schema}.{table_name} ADD COLUMN IF NOT EXISTS {name} {field_type} {properties};"
+    return 'ALTER TABLE {schema}.{table_name} ADD COLUMN IF NOT EXISTS "{name}" {field_type} {properties};'
 
 
 def insert_table_row():

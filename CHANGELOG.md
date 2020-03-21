@@ -4,6 +4,13 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
+### 1.1.2
+
+#### Fixes
+
+- Bug fixes
+
+
 ### 1.1.1
 
 #### Added
