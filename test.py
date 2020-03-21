@@ -1,9 +1,13 @@
-from test_models.postgresql_models import *
+from db_models.models import *
 from migrate import run_migrations
 from datetime import datetime, timedelta
 
 
 def create_objects():
+    Transactions.objects.delete()
+    Bank.objects.delete()
+    Currency.objects.delete()
+
     currency, _ = Currency.objects.get_or_create(code="USD")
     bank, _ = Bank.objects.get_or_create(
         name="Bank name",
@@ -17,6 +21,7 @@ def create_objects():
     )
     transaction_2 = Transactions.objects.create(
         date_of_entry=(datetime.now() - timedelta(days=5)).date(),
+        datetime_of_entry=datetime.now(),
         amount=1234,
         status=False,
         bank=bank.id
@@ -44,9 +49,9 @@ def query_objects():
     for obj in trans:
         print("Amount greater than 100", obj.id, obj.amount)
 
-    trans = Transactions.objects.filter(bank__currency__code="USD")
+    trans = Transactions.objects.filter(bank__currency__code__startswith="USD")
     for obj in trans:
-        print("Currency USD", obj.id, obj.bank.currency.code)
+        print("Currency USD", obj.id, obj.bank.currency.code, obj.datetime_of_entry)
 
 
 def main():

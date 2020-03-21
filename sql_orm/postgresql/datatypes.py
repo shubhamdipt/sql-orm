@@ -89,6 +89,11 @@ class DateField(Field):
     field_type = "DATE"
 
 
+class DateTimeField(Field):
+
+    field_type = "TIMESTAMPTZ"
+
+
 class CharField(Field):
 
     field_type = "VARCHAR"
