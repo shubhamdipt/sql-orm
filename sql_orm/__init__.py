@@ -43,6 +43,8 @@ class Table:
         for k, v in cls.__dict__.items():
             class_inspects = inspect.getmro(v.__class__)
             if len(class_inspects) > 1 and class_inspects[-2] == BaseField:
+                if k != k.lower():
+                    raise SQLException("Column names should be in lowercase.")
                 names.append(k)
         return sorted(names)
 
