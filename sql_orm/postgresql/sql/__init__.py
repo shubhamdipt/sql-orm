@@ -235,16 +235,19 @@ class Query:
             self.__switch_to_join_query()
 
     def __process_select_related(self):
-        for fk in self.__select_related:
-            table_class = getattr(self.__table_class.__dict__[fk], "table_name")
-            self.__other_tables_involved["{}.{}".format(table_class.get_schema(), table_class.get_table_name())] = {
-                "columns": table_class.get_column_names(),
-                "pk": table_class.get_pk_name(),
-                "join_key": {
-                    "table": "{}.{}".format(self.__table_class.get_schema(), self.__table_class.get_table_name()),
-                    "field_name": fk
-                },
-            }
+        for fk_item in self.__select_related:
+            parent_class = self.__table_class
+            for fk in fk_item.split("__"):
+                table_class = getattr(parent_class.__dict__[fk], "table_name")
+                self.__other_tables_involved["{}.{}".format(table_class.get_schema(), table_class.get_table_name())] = {
+                    "columns": table_class.get_column_names(),
+                    "pk": table_class.get_pk_name(),
+                    "join_key": {
+                        "table": "{}.{}".format(parent_class.get_schema(), parent_class.get_table_name()),
+                        "field_name": fk
+                    },
+                }
+                parent_class = table_class
 
     def __create_order_by_query(self):
         order_query = ""

@@ -4,6 +4,13 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
+### 1.1.4
+
+#### Added
+
+- JOIN support added for more than 1 level
+
+
 ### 1.1.3
 
 #### Fixes
