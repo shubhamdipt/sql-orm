@@ -75,7 +75,7 @@ class RowSet:
             delete=self.__delete
         )
         sql_query, params, column_query = query.query()
-        self.__columns_order = [i.strip() for i in column_query.split(",")]
+        self.__columns_order = [i.strip().strip('"') for i in column_query.split(",")]
         return {"query": sql_query, "params": params}
 
     def __set_attributes(self, column_values):

@@ -66,7 +66,7 @@ class PostgreSQLTable(Table):
                     schema=cls.get_schema(),
                     table_name=cls.get_table_name(),
                     constraint_name="{}_uniq".format("_".join(i)),
-                    columns=",".join(i)
+                    columns=",".join(['"{}"'.format(col for col in i)])
                 ))
         return meta_queries
 
@@ -75,6 +75,7 @@ class PostgreSQLTable(Table):
         return getattr(value, "pk") if hasattr(value, "pk") else value
 
     def __get_field_value(self, field_name):
+        field_name = field_name.strip('"')
         value = getattr(self, field_name)
         return self.__class__.get_value_or_object_pk(value)
 
@@ -114,14 +115,14 @@ class PostgreSQLTable(Table):
             query = sql.update_table_row().format(
                 schema=self.__class__.get_schema(),
                 table_name=self.__class__.get_table_name(),
-                set_key_value=", ".join(["{}=%s".format(i) for i in column_names]),
-                condition="{}=%s".format(pk_name)
+                set_key_value=", ".join(['"{}"=%s'.format(i) for i in column_names]),
+                condition='"{}"=%s'.format(pk_name)
             )
             with postgresql.PostgreSQL() as pgsql:
                 pgsql.query(query, params=params)
                 pgsql.commit()
         else:
-            column_names = [i for i in self.__class__.get_column_names() if i != "id"]
+            column_names = ['"{}"'.format(i) for i in self.__class__.get_column_names() if i != "id"]
             params = [self.__get_field_value(i) for i in column_names]
             query = sql.insert_table_row().format(
                 schema=self.__class__.get_schema(),

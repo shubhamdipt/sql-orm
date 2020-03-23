@@ -4,6 +4,14 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
+### 1.1.3
+
+#### Fixes
+
+- Bug fixes
+- Column names must be in lowercase
+
+
 ### 1.1.2
 
 #### Fixes

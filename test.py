@@ -54,10 +54,21 @@ def query_objects():
         print("Currency USD", obj.id, obj.bank.currency.code, obj.datetime_of_entry)
 
 
+def update_objects():
+    bank, _ = Bank.objects.get_or_create(
+        name="Bank name",
+        currency__code="USD"
+    )
+    bank.name = "My bank"
+    bank.save()
+    print(Bank.objects.get(name="My bank").name)
+
+
 def main():
     run_migrations()
     create_objects()
     query_objects()
+    update_objects()
 
 
 if __name__ == '__main__':
