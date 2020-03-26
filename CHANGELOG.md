@@ -4,6 +4,13 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
+### 1.1.5
+
+#### Fixes
+
+- Bug fixes in or_filter() and filter() when applied together
+
+
 ### 1.1.4
 
 #### Added

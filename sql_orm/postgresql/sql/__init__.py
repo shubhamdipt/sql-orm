@@ -207,11 +207,13 @@ class Query:
                 self.__change_to_sql_conditions(k, v)
                 for k, v in self.__or_filter_dict.items()]))
         if self.__filter_dict:
+            if filter_query:
+                filter_query += " AND "
             filter_query += " AND ".join([
                 self.__change_to_sql_conditions(k, v)
                 for k, v in self.__filter_dict.items()])
         if self.__exclude_dict:
-            if self.__filter_dict:
+            if filter_query:
                 filter_query += " AND "
             filter_query += "NOT "
             filter_query += " AND NOT ".join([
