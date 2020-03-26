@@ -8,6 +8,13 @@ All notable changes in this project are documented in this file.
 
 #### Fixes
 
+- Bug fixes in default value
+
+
+### 1.1.5
+
+#### Fixes
+
 - Bug fixes in or_filter() and filter() when applied together
 
 

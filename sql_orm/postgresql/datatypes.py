@@ -15,7 +15,10 @@ class Field(BaseField):
             self.properties = "PRIMARY KEY"
         else:
             if default is not None:
-                self.properties = "DEFAULT {}".format("TRUE" if default else "FALSE")
+                if bool(default) is default:
+                    self.properties = "DEFAULT {}".format("TRUE" if default else "FALSE")
+                else:
+                    self.properties = "DEFAULT {}".format(default)
             else:
                 self.properties = "NULL" if null else "NOT NULL"
                 if unique:
