@@ -4,7 +4,14 @@ All notable changes in this project are documented in this file.
 
 ## Versions
 
-### 1.1.5
+### 1.1.7
+
+#### Added
+
+- bulk_create() where argument is a list of dictionaries
+
+
+### 1.1.6
 
 #### Fixes
 

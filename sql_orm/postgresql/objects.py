@@ -155,6 +155,17 @@ class RowSet:
         obj.save(commit=True)
         return obj
 
+    def bulk_create(self, obj_list):
+        params = []
+        base_table = "{}.{}".format(self.__table_class.get_schema(), self.__table_class.get_table_name())
+        column_names = [i for i in self.__table_class.get_column_names() if i != "id"]
+        columns = ['"{}"'.format(i) for i in column_names if i != "id"]
+        query = 'INSERT INTO ' + base_table + ' (' + ", ".join(columns) + ') VALUES {};'
+        for obj in obj_list:
+            params.append(tuple([obj[k] for k in column_names]))
+        self.pgsql.insert_many(query, params=params)
+        self.pgsql.commit()
+
     def order_by(self, params):
         data = {}
         if type(params) == str:

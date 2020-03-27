@@ -26,6 +26,29 @@ def create_objects():
         status=False,
         bank=bank.id
     )
+    Transactions.objects.bulk_create([
+        {
+            "date_of_entry": (datetime.now() - timedelta(days=5)).date(),
+            "datetime_of_entry": datetime.now(),
+            "amount": 1,
+            "status": False,
+            "bank": bank.id
+        },
+        {
+            "date_of_entry": (datetime.now() - timedelta(days=5)).date(),
+            "datetime_of_entry": datetime.now(),
+            "amount": 2,
+            "status": False,
+            "bank": bank.id
+        },
+        {
+            "date_of_entry": (datetime.now() - timedelta(days=5)).date(),
+            "datetime_of_entry": datetime.now(),
+            "amount": 3,
+            "status": False,
+            "bank": bank.id
+        }
+    ])
 
 
 def query_objects():
@@ -40,7 +63,7 @@ def query_objects():
     print([{"name": i.name, "currency": i.currency.code} for i in banks])
 
     print("Transactions")
-    trans = Transactions.objects.all()
+    trans = Transactions.objects.all().order_by("amount")
     print([{"date_of_entry": i.date_of_entry,
             "amount": i.amount,
             "status": i.status} for i in trans])
