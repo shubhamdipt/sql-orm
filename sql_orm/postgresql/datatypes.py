@@ -6,9 +6,9 @@ class Field(BaseField):
 
     database_type = DATABASE_TYPES["PostgreSQL"]
     field_type = None
-    __value = None
 
     def __init__(self, verbose_name=None, null=False, unique=False, primary_key=False, default=None, extra_sql=()):
+        self.__value = None
         self.verbose_name = verbose_name
         self.primary_key = primary_key
         if primary_key:
@@ -31,11 +31,11 @@ class Field(BaseField):
     def convert(value):
         return value
 
-    def __set__(self, instance, value):
-        self.__value = self.convert(value) if value is not None else None
-
-    def __get__(self, instance, owner):
-        return self.__value
+    # def __set__(self, instance, value):
+    #     self.__value = self.convert(value) if value is not None else None
+    #
+    # def __get__(self, instance, owner):
+    #     return self.__value
 
     def create(self, schema, table_name, column_name):
         query = self.base_create_query.format(
@@ -46,6 +46,9 @@ class Field(BaseField):
             properties=self.properties
         )
         return query
+
+    def set_value(self, value):
+        self.__value = value
 
 
 class BooleanField(Field):
@@ -124,14 +127,20 @@ class ForeignKeyField(Field):
         self.field_type = "INTEGER" if self.field.field_type == "SERIAL" else self.field.field_type
         super().__init__(verbose_name=verbose_name, null=null, unique=unique, extra_sql=(extra_sql, ))
 
-    def __set__(self, instance, value):
-        self.__value = value
+    # def __set__(self, instance, value):
+    #     self.__value = value
+    #
+    # def __get__(self, instance, owner):
+    #     if self.__value is not None:
+    #         if isinstance(self.__value, self.table_name):
+    #             return self.__value
+    #         value = self.table_name.get_value_or_object_pk(self.__value)
+    #         value = self.table_name.objects.get(pk=self.field.convert(value))
+    #         return value
+    #     return None
 
-    def __get__(self, instance, owner):
-        if self.__value is not None:
-            if isinstance(self.__value, self.table_name):
-                return self.__value
-            value = self.table_name.get_value_or_object_pk(self.__value)
-            value = self.table_name.objects.get(pk=self.field.convert(value))
-            return value
-        return None
+    def __getattribute__(self, item):
+        try:
+            return object.__getattribute__(self, item)
+        except AttributeError:
+            return getattr(self.__dict__["table_name"].objects.get(pk=self.__dict__["_Field__value"]), item)

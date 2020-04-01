@@ -136,7 +136,7 @@ class PostgreSQLTable(Table):
                     pgsql.query(query, params=params)
                     obj_id = pgsql.fetchone()[0]
                     pgsql.commit()
-            setattr(self, "id", obj_id)
+            self.__dict__["id"] = obj_id
 
     def save(self, commit=True):
         self._sql_save(commit=commit)
@@ -148,4 +148,4 @@ class PostgreSQLTable(Table):
             raise SQLException("Missing primary key for the given object.")
 
     def as_dict(self):
-        return {k: getattr(self, k) for k in self.__class__.get_column_names()}
+        return {k: self.__dict__.get(k) for k in self.__class__.get_column_names()}

@@ -26,7 +26,23 @@ class Table:
             raise SQLException("Wrong database_type. Valid options: {}".format(", ".join(DATABASE_TYPES.values())))
         self.database_type = database_type
         for i in self.__class__.get_column_names():
-            setattr(self, i, kwargs.get(i))
+            self.__dict__[i] = kwargs.get(i)
+
+    def __getattribute__(self, item):
+        if item.startswith("__"):
+            return object.__getattribute__(self, item)
+        try:
+            return self.__dict__[item]
+        except KeyError:
+            return object.__getattribute__(self, item)
+
+    def __setattr__(self, key, value):
+        if key.startswith("__"):
+            object.__setattr__(self, key, value)
+        try:
+            self.__dict__[key] = value
+        except KeyError:
+            object.__setattr__(self, key, value)
 
     @classmethod
     def _get_column_fields(cls):

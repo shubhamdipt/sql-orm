@@ -91,8 +91,8 @@ class RowSet:
                     return data_map[fk_field_name]
                 if isinstance(obj_table_class.__dict__[obj_field], datatypes.ForeignKeyField):
                     obj_fk_table_class = getattr(obj_table_class.__dict__[obj_field], "table_name")
-                    mdoel_fk_obj = obj_fk_table_class()
-                    model_fk_obj = model_obj_set_attr(obj_fk_table_class, mdoel_fk_obj, fk_field_name=this_field)
+                    model_fk_obj = obj_fk_table_class()
+                    model_fk_obj = model_obj_set_attr(obj_fk_table_class, model_fk_obj, fk_field_name=this_field)
                     setattr(model_obj, obj_field, model_fk_obj)
                 else:
                     setattr(model_obj, obj_field, data_map[this_field])
@@ -104,7 +104,12 @@ class RowSet:
         if len(self.__table_columns) == len(self.__columns_order):
             for k in self.__table_columns:
                 field = "{}.{}.{}".format(schema, table_name, k)
-                setattr(obj, k, data_map[field])
+                if isinstance( self.__table_class.__dict__[k], datatypes.ForeignKeyField):
+                    obj_key = self.__table_class.__dict__[k]
+                    obj_key.set_value(data_map[field])
+                    obj.__dict__[k] = obj_key
+                else:
+                    setattr(obj, k, data_map[field])
         elif len(self.__table_columns) < len(self.__columns_order):
             obj = model_obj_set_attr(self.__table_class, obj)
         return obj
