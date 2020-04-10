@@ -1,4 +1,5 @@
 import inspect
+from copy import deepcopy
 
 
 DATABASE_TYPES = {
@@ -14,7 +15,13 @@ NON_COLUMN_FIELDS = ("__module__", "__doc__", "Meta", "_schema")
 
 
 class BaseField:
-    pass
+
+    def __deepcopy__(self, memodict):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v))
+        return result
 
 
 class Table:
@@ -67,3 +74,29 @@ class Table:
     @classmethod
     def get_table_name(cls):
         return cls.__name__.lower()
+
+
+class FKFieldTree:
+
+    def __init__(self, name='root', children=None, parent=None):
+        self.name = name
+        self.children = []
+        self.parent = None
+        if parent:
+            self.set_parent(parent)
+        if children:
+            for child in children:
+                self.add_child(child)
+
+    def __repr__(self):
+        return self.name
+
+    def add_child(self, node):
+        if not isinstance(node, FKFieldTree):
+            raise ValueError("The child should be a FieldTree instance.")
+        self.children.append(node)
+
+    def set_parent(self, node):
+        if not isinstance(node, FKFieldTree):
+            raise ValueError("The parent should be a FieldTree instance.")
+        self.parent = node

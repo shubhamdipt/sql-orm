@@ -38,3 +38,29 @@ class Transactions(PostgreSQLTable):
 
     def transaction_method(self):
         return "Ok"
+
+
+class InterBankStatus(PostgreSQLTable):
+
+    id = datatypes.DefaultPrimaryKeyField(verbose_name="ID")
+    status = datatypes.BooleanField(verbose_name="Status", default=True)
+    depositor = datatypes.ForeignKeyField(
+        table_name=Bank,
+        verbose_name="Bank",
+        null=True
+    )
+    receiver = datatypes.ForeignKeyField(
+        table_name=Bank,
+        verbose_name="Bank",
+        null=True
+    )
+
+
+class InterBankTransaction(PostgreSQLTable):
+
+    id = datatypes.DefaultPrimaryKeyField(verbose_name="ID")
+    amount = datatypes.IntegerField(verbose_name="Amount")
+    banks_involved = datatypes.ForeignKeyField(
+        table_name=InterBankStatus,
+        verbose_name="Inter bank trans",
+    )

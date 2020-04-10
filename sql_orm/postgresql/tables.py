@@ -16,6 +16,10 @@ class PostgreSQLTable(Table):
         return cls._schema
 
     @classmethod
+    def get_full_table_name(cls):
+        return "{}.{}".format(cls.get_schema(), cls.get_table_name())
+
+    @classmethod
     def __create_schema(cls):
         return sql.create_schema().format(name=cls.get_schema())
 

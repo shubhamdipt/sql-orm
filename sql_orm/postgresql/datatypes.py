@@ -31,12 +31,6 @@ class Field(BaseField):
     def convert(value):
         return value
 
-    # def __set__(self, instance, value):
-    #     self.__value = self.convert(value) if value is not None else None
-    #
-    # def __get__(self, instance, owner):
-    #     return self.__value
-
     def create(self, schema, table_name, column_name):
         query = self.base_create_query.format(
             schema=schema,
@@ -104,8 +98,8 @@ class CharField(Field):
 
     field_type = "VARCHAR"
 
-    def __init__(self, max_length, verbose_name=None, null=False, unique=False):
-        super().__init__(verbose_name=verbose_name, null=null, unique=unique)
+    def __init__(self, max_length, verbose_name=None, null=False, unique=False, default=None):
+        super().__init__(verbose_name=verbose_name, null=null, unique=unique, default=default)
         self.properties = "({}) {}".format(max_length, self.properties)
 
     @staticmethod
@@ -126,18 +120,6 @@ class ForeignKeyField(Field):
         )
         self.field_type = "INTEGER" if self.field.field_type == "SERIAL" else self.field.field_type
         super().__init__(verbose_name=verbose_name, null=null, unique=unique, extra_sql=(extra_sql, ))
-
-    # def __set__(self, instance, value):
-    #     self.__value = value
-    #
-    # def __get__(self, instance, owner):
-    #     if self.__value is not None:
-    #         if isinstance(self.__value, self.table_name):
-    #             return self.__value
-    #         value = self.table_name.get_value_or_object_pk(self.__value)
-    #         value = self.table_name.objects.get(pk=self.field.convert(value))
-    #         return value
-    #     return None
 
     def __getattribute__(self, item):
         try:

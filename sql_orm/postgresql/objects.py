@@ -1,6 +1,8 @@
 from sql_orm import postgresql
 from sql_orm.postgresql import sql
 from sql_orm.postgresql import datatypes
+from collections import OrderedDict
+from copy import deepcopy
 
 
 class QueryException(Exception):
@@ -33,6 +35,12 @@ class RowSet:
         self.__select_related = []
         self.__columns_order = []
         self.__value = None
+        self.__table_details = None
+        self.__base_table_proxy = None
+
+    @staticmethod
+    def get_details_from_table_proxy(proxy):
+        pass
 
     def __enter__(self):
         return self
@@ -74,45 +82,58 @@ class RowSet:
             offset=self.__offset,
             delete=self.__delete
         )
-        sql_query, params, column_query = query.query()
+        sql_query, params, column_query, self.__table_details, self.__base_table_proxy = query.query()
         self.__columns_order = [i.strip().strip('"') for i in column_query.split(",")]
         return {"query": sql_query, "params": params}
 
     def __set_attributes(self, column_values):
-        data_map = {self.__columns_order[i]: column_values[i] for i in
-                    range(len(self.__columns_order))}
+        data_map = {}
+        used_proxies = []
+        for i in range(len(column_values)):
+            p, c = self.__columns_order[i].split(".")
+            if p not in data_map:
+                data_map[p] = {}
+            data_map[p][c] = column_values[i]
+        data_map = OrderedDict(sorted([(k, v) for k, v in data_map.items()], key=lambda x:x[0]))
 
-        def model_obj_set_attr(obj_table_class, model_obj, fk_field_name=None):
-            model_schema = obj_table_class.get_schema()
-            model_name = obj_table_class.get_table_name()
-            for obj_field in obj_table_class.get_column_names():
-                this_field = "{}.{}.{}".format(model_schema, model_name, obj_field)
-                if this_field not in data_map:
-                    return data_map[fk_field_name]
-                if isinstance(obj_table_class.__dict__[obj_field], datatypes.ForeignKeyField):
-                    obj_fk_table_class = getattr(obj_table_class.__dict__[obj_field], "table_name")
-                    model_fk_obj = obj_fk_table_class()
-                    model_fk_obj = model_obj_set_attr(obj_fk_table_class, model_fk_obj, fk_field_name=this_field)
-                    setattr(model_obj, obj_field, model_fk_obj)
-                else:
-                    setattr(model_obj, obj_field, data_map[this_field])
-            return model_obj
+        def get_table_proxy(tbl_class, base_tbl_class, f_key):
+            for proxy_k, proxy_v in self.__table_details.items():
+                conditions = (
+                    proxy_v["details"]["fk_table_class"] == tbl_class and
+                    proxy_v["details"]["base_table_class"] == base_tbl_class and
+                    proxy_v["details"]["key"] == f_key
+                )
+                if conditions and proxy_k not in used_proxies:
+                    used_proxies.append(proxy_k)
+                    return proxy_k
+            return
 
-        schema = self.__table_class.get_schema()
-        table_name = self.__table_class.get_table_name()
-        obj = self.__table_class()
-        if len(self.__table_columns) == len(self.__columns_order):
-            for k in self.__table_columns:
-                field = "{}.{}.{}".format(schema, table_name, k)
-                if isinstance( self.__table_class.__dict__[k], datatypes.ForeignKeyField):
-                    obj_key = self.__table_class.__dict__[k]
-                    obj_key.set_value(data_map[field])
-                    obj.__dict__[k] = obj_key
+        def fill_table_attributes(proxy_name):
+            if proxy_name == self.__base_table_proxy:
+                table_class = self.__table_class
+            else:
+                table_class = self.__table_details[proxy_name]["details"]["fk_table_class"]
+            obj = table_class()
+            for column in table_class.get_column_names():
+                if isinstance(table_class.__dict__[column], datatypes.ForeignKeyField):
+                    obj_fk_table_class = getattr(table_class.__dict__[column], "table_name")
+                    fk_proxy = get_table_proxy(
+                        tbl_class=obj_fk_table_class,
+                        base_tbl_class=table_class,
+                        f_key=column
+                    )
+                    if fk_proxy:
+                        setattr(obj, column, fill_table_attributes(fk_proxy))
+                    else:
+                        obj_f_key = deepcopy(table_class.__dict__[column])
+                        obj_f_key.set_value(data_map[proxy_name][column])
+                        setattr(obj, column, obj_f_key)
                 else:
-                    setattr(obj, k, data_map[field])
-        elif len(self.__table_columns) < len(self.__columns_order):
-            obj = model_obj_set_attr(self.__table_class, obj)
-        return obj
+                    setattr(obj, column, data_map[proxy_name][column])
+            return obj
+
+        main_obj = fill_table_attributes(proxy_name=self.__base_table_proxy)
+        return main_obj
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -200,9 +221,9 @@ class RowSet:
         self.__update_query_inputs({"exclude": kwargs})
         return self
 
-    def select_related(self, field=None):
-        if field:
-            self.__select_related.append(field)
+    def select_related(self, *args):
+        if args:
+            self.__select_related = [i for i in args]
         else:
             self.__select_related = [k for k, v in self.__table_class.__dict__.items() if isinstance(v, datatypes.ForeignKeyField)]
         return self
